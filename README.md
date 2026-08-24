@@ -9,24 +9,34 @@
 
 ## System Architecture
 PDFs/Documents
+
       ↓
 Text Extraction
+
       ↓
 Chunking
+
       ↓
 Embeddings
+
       ↓
 Vector Database
+
       ↓
 User Question
+
       ↓
 Query Embedding
+
       ↓
 Retrieval
+
       ↓
 Context Augmentation
+
       ↓
 LLM Generation
+
       ↓
 Arabic Legal Answer
 
