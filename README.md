@@ -8,35 +8,15 @@
 - Source/context-aware responses
 
 ## System Architecture
-PDFs/Documents
-
-      ↓
-Text Extraction
-
-      ↓
-Chunking
-
-      ↓
-Embeddings
-
-      ↓
-Vector Database
-
-      ↓
-User Question
-
-      ↓
-Query Embedding
-
-      ↓
-Retrieval
-
-      ↓
-Context Augmentation
-
-      ↓
-LLM Generation
-
-      ↓
-Arabic Legal Answer
+1. PDFs/Documents
+2. Text Extraction
+3. Chunking
+4. Embeddings
+5. Vector Database
+6. User Question
+7. Query Embedding
+8. Retrieval
+9. Context Augmentation
+10. LLM Generation
+11. Arabic Legal Answer
 
