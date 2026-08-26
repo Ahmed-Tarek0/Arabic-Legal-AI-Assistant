@@ -1,42 +1,56 @@
-import os
-from retriever import LegalRetriever
-# يمكنك استخدام groq أو google.generativeai أو openai
-from groq import Groq 
+import torch
+from typing import List, Dict
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-class LegalRAGGenerator:
-    def __init__(self, retriever):
-        self.retriever = retriever
-        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-    def augment_prompt(self, query: str, retrieved_chunks: list) -> str:
-        context_str = "\n\n---\n\n".join(retrieved_chunks)
-        
-        system_prompt = f"""أنت مساعد قانوني ذكي ومتخصص في القانون العربي. 
-أجب على سؤال المستخدم بناءً على النصوص القانونية المرفقة فقط. 
-إذا لم تجد الإجابة في النصوص المرفقة، قل بوضوح: "المعلومة غير متوفرة في المستندات المتاحة".
+class LegalGenerator:
+    """Handles the Generation phase using Qwen 2.5 with 4-bit Quantization."""
 
-النصوص القانونية المسترجعة:
-{context_str}
+    def __init__(
+        self,
+        model_name: str = "Qwen/Qwen2.5-7B-Instruct"
+    ):
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-سؤال المستخدم:
-{query}
-
-الإجابة القانونية الدقيقة:"""
-        
-        return system_prompt
-
-    def generate_answer(self, query: str, top_k: int = 3):
-        # 1. Retrieval
-        retrieved_docs = self.retriever.retrieve(query, top_k=top_k)
-        
-        # 2. Augmentation
-        augmented_prompt = self.augment_prompt(query, retrieved_docs)
-        
-        # 3. Generation
-        response = self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": augmented_prompt}],
-            temperature=0.2 # حرارة منخفضة لضمان الدقة القانونية وعدم التأليف
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_quant_type="nf4"
         )
-        
-        return response.choices[0].message.content, retrieved_docs
+
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=quantization_config,
+            device_map="auto"
+        )
+
+    def generate(self, messages: List[Dict[str, str]]) -> str:
+        prompt_text = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+
+        model_inputs = self.tokenizer(
+            [prompt_text],
+            return_tensors="pt"
+        ).to(self.model.device)
+
+        with torch.inference_mode():
+            generated_ids = self.model.generate(
+                **model_inputs,
+                max_new_tokens=512,
+                temperature=0.1,
+                do_sample=False
+            )
+
+        generated_ids = [
+            output_ids[len(input_ids):]
+            for input_ids, output_ids
+            in zip(model_inputs.input_ids, generated_ids)
+        ]
+
+        return self.tokenizer.batch_decode(
+            generated_ids,
+            skip_special_tokens=True
+        )[0]
