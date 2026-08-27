@@ -1,6 +1,6 @@
 """
 Arabic Legal AI Assistant - Fast, Clean & Interactive Contract Analysis.
-Supports Drag & Drop file upload directly from device, instant indexing, and real-time streaming Q&A.
+Supports Drag & Drop file upload, instant indexing, interactive quick questions, and direct legal answers.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom Clean RTL & Drag-and-Drop Styling
+# Custom Modern Clean RTL Styling
 st.markdown(
     """
     <style>
@@ -65,7 +65,7 @@ st.markdown(
         border: 2px dashed #0d9488 !important;
         background-color: rgba(13, 148, 136, 0.04) !important;
         border-radius: 14px !important;
-        padding: 2rem 1rem !important;
+        padding: 2.2rem 1.2rem !important;
         transition: all 0.2s ease-in-out;
     }
     [data-testid="stFileUploader"] section:hover {
@@ -88,15 +88,19 @@ st.markdown(
         font-size: 0.95rem;
     }
 
-    /* Evidence Box */
-    .source-box {
-        background-color: rgba(13, 148, 136, 0.08);
-        border-right: 4px solid #0d9488;
-        border-radius: 6px;
-        padding: 0.8rem 1rem;
-        margin-top: 0.5rem;
-        font-size: 0.9rem;
-        line-height: 1.7;
+    /* Quick Question Buttons */
+    .stButton button {
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease;
+    }
+
+    /* Chat bubble typography */
+    [data-testid="stChatMessage"] {
+        padding: 1rem 1.2rem !important;
+        border-radius: 12px !important;
+        margin-bottom: 0.8rem !important;
+        line-height: 1.8 !important;
     }
 
     /* RTL overrides */
@@ -230,26 +234,29 @@ if st.session_state.pipeline:
     st.session_state.pipeline.generator = LegalGenerator()
     st.session_state.pipeline.augmentor = LegalAugmentor()
 
+    # Quick Suggestion Chips for user convenience
+    if not st.session_state.messages:
+        st.markdown("<p style='color:#64748b; font-size:0.9rem;'>💡 <b>أسئلة مقترحة سريعة:</b></p>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("👥 من هم أطراف العقد؟", use_container_width=True):
+                st.session_state.messages.append({"role": "user", "content": "من هم أطراف هذا العقد وبياناتهم؟"})
+                st.rerun()
+        with col2:
+            if st.button("💰 القيمة المالية / الأجرة؟", use_container_width=True):
+                st.session_state.messages.append({"role": "user", "content": "ما هي القيمة المالية أو الأجرة المتفق عليها وطريقة سدادها؟"})
+                st.rerun()
+        with col3:
+            if st.button("⚠️ شروط الفسخ والإنهاء؟", use_container_width=True):
+                st.session_state.messages.append({"role": "user", "content": "ما هي مدة العقد وشروط فسخه أو إنهائه؟"})
+                st.rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
+
     # Clean display of message history
     for msg in st.session_state.messages:
         avatar = "🧑‍💼" if msg["role"] == "user" else "⚖️"
         with st.chat_message(msg["role"], avatar=avatar):
             st.markdown(msg["content"])
-            
-            # Show Reference Evidence Expanders
-            if msg.get("docs"):
-                with st.expander("🔍 نص البند المرجعي من العقد", expanded=False):
-                    for doc in msg["docs"]:
-                        pages = doc.get("source_pages", [])
-                        st.markdown(
-                            f"""
-                            <div class="source-box">
-                                <b>📌 الصفحة {pages}:</b><br>
-                                {doc.get('text', '')}
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
 
     # Check if a response is currently generating
     is_generating = (
@@ -278,33 +285,17 @@ if st.session_state.pipeline:
         pending_query = st.session_state.messages[-1]["content"]
         with st.chat_message("assistant", avatar="⚖️"):
             try:
-                stream_iter, retrieved_docs = st.session_state.pipeline.generate_answer_stream(
+                stream_iter, _ = st.session_state.pipeline.generate_answer_stream(
                     query=pending_query,
                     top_k=3,
                 )
 
                 full_answer = st.write_stream(stream_iter)
 
-                # Show source snippets
-                if retrieved_docs:
-                    with st.expander("🔍 نص البند المرجعي من العقد", expanded=False):
-                        for doc in retrieved_docs:
-                            pages = doc.get("source_pages", [])
-                            st.markdown(
-                                f"""
-                                <div class="source-box">
-                                    <b>📌 الصفحة {pages}:</b><br>
-                                    {doc.get('text', '')}
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-
                 # Save assistant response
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": full_answer,
-                    "docs": retrieved_docs,
                 })
                 st.rerun()
 
@@ -314,6 +305,5 @@ if st.session_state.pipeline:
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": err_msg,
-                    "docs": [],
                 })
                 st.rerun()
