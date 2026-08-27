@@ -1,5 +1,6 @@
 """
-Simple, Clean & Fast Streamlit Interface for Arabic Contract Q&A Assistant.
+Arabic Legal AI Assistant - Fast, Clean & Interactive Contract Analysis.
+Supports Drag & Drop file upload directly from device, instant indexing, and real-time streaming Q&A.
 """
 
 from __future__ import annotations
@@ -18,10 +19,10 @@ st.set_page_config(
     page_title="المساعد القانوني الذكي لتحليل العقود",
     page_icon="⚖️",
     layout="centered",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# Custom Clean RTL Styling
+# Custom Clean RTL & Drag-and-Drop Styling
 st.markdown(
     """
     <style>
@@ -55,6 +56,38 @@ st.markdown(
         margin: 0;
     }
 
+    /* Drag & Drop Upload Zone Styling */
+    [data-testid="stFileUploader"] {
+        direction: rtl;
+        text-align: center;
+    }
+    [data-testid="stFileUploader"] section {
+        border: 2px dashed #0d9488 !important;
+        background-color: rgba(13, 148, 136, 0.04) !important;
+        border-radius: 14px !important;
+        padding: 2rem 1rem !important;
+        transition: all 0.2s ease-in-out;
+    }
+    [data-testid="stFileUploader"] section:hover {
+        border-color: #0f766e !important;
+        background-color: rgba(13, 148, 136, 0.08) !important;
+    }
+
+    /* Active Contract Badge */
+    .contract-badge {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 10px;
+        padding: 0.8rem 1.2rem;
+        margin-bottom: 1.2rem;
+        color: #166534;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
     /* Evidence Box */
     .source-box {
         background-color: rgba(13, 148, 136, 0.08);
@@ -66,7 +99,7 @@ st.markdown(
         line-height: 1.7;
     }
 
-    /* RTL sidebar overrides */
+    /* RTL overrides */
     [data-testid="stSidebar"] {
         direction: rtl;
         text-align: right;
@@ -91,49 +124,28 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "active_file_id" not in st.session_state:
     st.session_state.active_file_id = None
+if "doc_stats" not in st.session_state:
+    st.session_state.doc_stats = {}
 
 
 # ==============================================================================
-# Sidebar UI (Simple & Clean)
+# Sidebar UI (Clean Options)
 # ==============================================================================
 with st.sidebar:
     st.markdown("### ⚖️ إدارة العقد")
     st.markdown("---")
 
-    st.markdown("#### 📂 ارفع ملف العقد")
-    uploaded_file = st.file_uploader(
-        "اختر ملف العقد (PDF / Word / TXT):",
+    sidebar_file = st.file_uploader(
+        "رفع عقد جديد:",
         type=["pdf", "docx", "txt", "text"],
-        help="ارفع أي عقد أو اتفاقية للاستفسار عنها",
+        key="sidebar_uploader",
+        help="اسحب أو اختر ملف عقد جديد من جهازك",
     )
 
-    # Ingestion Logic
-    if uploaded_file is not None:
-        file_id = f"{uploaded_file.name}_{uploaded_file.size}"
-        if st.session_state.active_file_id != file_id:
-            st.session_state.active_file_id = file_id
-            with st.spinner("⏳ جاري قراءة نصوص العقد وبناء الفهرس الدلالي..."):
-                try:
-                    retriever, chunks, pages = process_contract_dynamically(
-                        file_source=uploaded_file,
-                        filename=uploaded_file.name,
-                    )
-                    generator = LegalGenerator()
-                    st.session_state.pipeline = LegalRAGPipeline(
-                        retriever=retriever,
-                        augmentor=LegalAugmentor(),
-                        generator=generator,
-                    )
-                    st.session_state.contract_name = uploaded_file.name
-                    st.session_state.messages = []
-                    st.success(f"✅ تم تحميل العقد: {uploaded_file.name}")
-                except Exception as e:
-                    st.error(f"❌ حدث خطأ أثناء معالجة الملف: {e}")
-
-    # Ensure generator & augmentor are always refreshed
-    if st.session_state.pipeline:
-        st.session_state.pipeline.generator = LegalGenerator()
-        st.session_state.pipeline.augmentor = LegalAugmentor()
+    if st.session_state.contract_name:
+        st.markdown(f"📄 **العقد الحالي:** `{st.session_state.contract_name}`")
+        if st.session_state.doc_stats:
+            st.caption(f"📑 عدد الصفحات: {st.session_state.doc_stats.get('pages', 1)} | 🧩 المقاطع: {st.session_state.doc_stats.get('chunks', 1)}")
 
     st.markdown("---")
     if st.button("🗑️ تفريغ العقد والبدء من جديد", use_container_width=True):
@@ -141,11 +153,12 @@ with st.sidebar:
         st.session_state.contract_name = None
         st.session_state.messages = []
         st.session_state.active_file_id = None
+        st.session_state.doc_stats = {}
         st.rerun()
 
 
 # ==============================================================================
-# Main Page (Chat Interface)
+# Main Page
 # ==============================================================================
 
 # Header
@@ -153,27 +166,71 @@ st.markdown(
     """
     <div class="app-header">
         <h2>⚖️ المساعد القانوني الذكي</h2>
-        <p>ارفع أي عقد واسأل عن أي بند أو شرط أو التزام، وسيقوم الذكاء الاصطناعي بالإجابة مباشرة بدقة واختصار.</p>
+        <p>ارفع أي عقد واسأل عن أي بند أو شرط أو التزام، وسيجيبك الذكاء الاصطناعي بدقة فورية وسرعة فائقة.</p>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
+# File Ingestion handling (Main Dropzone or Sidebar)
+uploaded_file = None
+
 if not st.session_state.pipeline:
+    st.markdown("### 📂 اسحب ملف العقد وأفلته هنا للبدء:")
+    main_file = st.file_uploader(
+        "اسحب الملف من جهازك وأفلته هنا مباشرة (PDF / Word / TXT):",
+        type=["pdf", "docx", "txt", "text"],
+        key="main_uploader",
+        label_visibility="collapsed",
+    )
+    uploaded_file = main_file or sidebar_file
+else:
+    uploaded_file = sidebar_file
+
+# Process File if new
+if uploaded_file is not None:
+    file_id = f"{uploaded_file.name}_{uploaded_file.size}"
+    if st.session_state.active_file_id != file_id:
+        st.session_state.active_file_id = file_id
+        with st.spinner("⏳ جاري قراءة نصوص العقد وفهرستها في ثوانٍ..."):
+            try:
+                retriever, chunks, pages = process_contract_dynamically(
+                    file_source=uploaded_file,
+                    filename=uploaded_file.name,
+                )
+                generator = LegalGenerator()
+                st.session_state.pipeline = LegalRAGPipeline(
+                    retriever=retriever,
+                    augmentor=LegalAugmentor(),
+                    generator=generator,
+                )
+                st.session_state.contract_name = uploaded_file.name
+                st.session_state.doc_stats = {"pages": len(pages), "chunks": len(chunks)}
+                st.session_state.messages = []
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ حدث خطأ أثناء معالجة الملف: {e}")
+
+# ==============================================================================
+# Chat Interface (When Contract is Loaded)
+# ==============================================================================
+if st.session_state.pipeline:
+    # Contract Info Header
     st.markdown(
-        """
-        <div style="text-align: center; padding: 3rem 1.5rem; border: 2px dashed #94a3b8; border-radius: 12px; margin-top: 1rem;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">📄</div>
-            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 700;">ابدأ بررفع ملف العقد من القائمة الجانبية</h3>
-            <p style="color: #64748b;">(يدعم ملفات PDF و Word و TXT)</p>
+        f"""
+        <div class="contract-badge">
+            <span>📄 <b>العقد المرفوع:</b> {st.session_state.contract_name}</span>
+            <span>⚡ جاهز للإجابة الفورية</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
-else:
-    st.info(f"📄 **العقد النشط:** `{st.session_state.contract_name}`")
 
-    # Display Messages History
+    # Ensure pipeline generator & augmentor are refreshed
+    st.session_state.pipeline.generator = LegalGenerator()
+    st.session_state.pipeline.augmentor = LegalAugmentor()
+
+    # Display Chat History
     for msg in st.session_state.messages:
         avatar = "🧑‍💼" if msg["role"] == "user" else "⚖️"
         with st.chat_message(msg["role"], avatar=avatar):
@@ -203,50 +260,44 @@ else:
         with st.chat_message("user", avatar="🧑‍💼"):
             st.markdown(user_query)
 
-        # Assistant Generation
+        # Assistant Generation with smooth streaming
         with st.chat_message("assistant", avatar="⚖️"):
-            response_placeholder = st.empty()
-            with st.spinner("🤖 جاري قراءة العقد واستنباط الإجابة المباشرة..."):
-                try:
-                    stream_iter, retrieved_docs = st.session_state.pipeline.generate_answer_stream(
-                        query=user_query,
-                        top_k=4,
-                    )
+            try:
+                # Instant retrieval (< 0.05s) + streaming generation
+                stream_iter, retrieved_docs = st.session_state.pipeline.generate_answer_stream(
+                    query=user_query,
+                    top_k=4,
+                )
 
-                    full_answer = ""
-                    for chunk in stream_iter:
-                        full_answer += chunk
-                        response_placeholder.markdown(full_answer + "▌")
-                    
-                    response_placeholder.markdown(full_answer)
+                full_answer = st.write_stream(stream_iter)
 
-                    # Show source snippets
-                    if retrieved_docs:
-                        with st.expander("🔍 نص البند المرجعي من العقد", expanded=False):
-                            for doc in retrieved_docs:
-                                pages = doc.get("source_pages", [])
-                                st.markdown(
-                                    f"""
-                                    <div class="source-box">
-                                        <b>📌 الصفحة {pages}:</b><br>
-                                        {doc.get('text', '')}
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True,
-                                )
+                # Show source snippets
+                if retrieved_docs:
+                    with st.expander("🔍 نص البند المرجعي من العقد", expanded=False):
+                        for doc in retrieved_docs:
+                            pages = doc.get("source_pages", [])
+                            st.markdown(
+                                f"""
+                                <div class="source-box">
+                                    <b>📌 الصفحة {pages}:</b><br>
+                                    {doc.get('text', '')}
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
 
-                    # Save to state
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": full_answer,
-                        "docs": retrieved_docs,
-                    })
+                # Save to state
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": full_answer,
+                    "docs": retrieved_docs,
+                })
 
-                except Exception as e:
-                    err_msg = f"❌ تعذر توليد الإجابة: {e}"
-                    response_placeholder.error(err_msg)
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": err_msg,
-                        "docs": [],
-                    })
+            except Exception as e:
+                err_msg = f"❌ تعذر توليد الإجابة: {e}"
+                st.error(err_msg)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": err_msg,
+                    "docs": [],
+                })

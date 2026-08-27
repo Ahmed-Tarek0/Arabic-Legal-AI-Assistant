@@ -165,7 +165,8 @@ def process_contract_dynamically(
     embeddings = embed_texts(texts)
 
     # FAISS Index
-    index = faiss.IndexFlatIP(EMBED_DIM)
+    dim = embeddings.shape[1]
+    index = faiss.IndexFlatIP(dim)
     index.add(embeddings)
 
     # Metadata

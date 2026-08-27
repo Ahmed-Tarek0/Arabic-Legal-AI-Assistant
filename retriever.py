@@ -177,11 +177,11 @@ class LegalRetriever:
             dtype="float32",
         )
 
-        if query_embedding.shape != (1, EMBED_DIM):
+        if query_embedding.shape != (1, self.index.d):
             raise ValueError(
                 f"Unexpected query embedding shape: "
                 f"{query_embedding.shape}. "
-                f"Expected (1, {EMBED_DIM})."
+                f"Expected (1, {self.index.d})."
             )
 
         # Because both document and query embeddings are L2-normalized,

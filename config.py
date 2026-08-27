@@ -28,16 +28,16 @@ CHUNK_SIZE_WORDS = 220        # target chunk size, in words (Arabic legal text ~
 CHUNK_OVERLAP_WORDS = 40      # sliding-window overlap between consecutive chunks
 MIN_CHUNK_WORDS = 20          # drop chunks smaller than this (headers, page numbers, noise)
 
-# ---------- Embedding ----------
-# BGE-M3: strong multilingual embedding model with native Arabic support.
-EMBED_MODEL_NAME = "BAAI/bge-m3"
-EMBED_BATCH_SIZE = 12
-EMBED_MAX_LENGTH = 1024        # BGE-M3 supports up to 8192, 1024 is plenty for our chunk size
-USE_FP16 = True                 # set False if running on CPU only
+# ---------- Embedding (Fast & Lightweight Multilingual Model) ----------
+# paraphrase-multilingual-MiniLM-L12-v2: Ultra-fast (<0.05s query time), ~120MB RAM, excellent Arabic semantic understanding
+EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+EMBED_BATCH_SIZE = 32
+EMBED_MAX_LENGTH = 512
+USE_FP16 = False
 
 # ---------- FAISS ----------
-EMBED_DIM = 1024               # BGE-M3 dense vector dimension
-TOP_K = 5
+EMBED_DIM = 384               # MiniLM dense vector dimension
+TOP_K = 4
 
 # ---------- Evaluation (Phase 2) ----------
 HF_DATASET_ID = "dataflare/egypt-legal-corpus"
