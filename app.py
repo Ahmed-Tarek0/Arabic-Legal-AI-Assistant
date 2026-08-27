@@ -124,8 +124,8 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "active_file_id" not in st.session_state:
     st.session_state.active_file_id = None
-if "doc_stats" not in st.session_state:
-    st.session_state.doc_stats = {}
+if "doc_pages_count" not in st.session_state:
+    st.session_state.doc_pages_count = 1
 
 
 # ==============================================================================
@@ -144,8 +144,8 @@ with st.sidebar:
 
     if st.session_state.contract_name:
         st.markdown(f"📄 **العقد الحالي:** `{st.session_state.contract_name}`")
-        if st.session_state.doc_stats:
-            st.caption(f"📑 عدد الصفحات: {st.session_state.doc_stats.get('pages', 1)} | 🧩 المقاطع: {st.session_state.doc_stats.get('chunks', 1)}")
+        if st.session_state.doc_pages_count:
+            st.caption(f"📑 عدد الصفحات: {st.session_state.doc_pages_count}")
 
     st.markdown("---")
     if st.button("🗑️ تفريغ العقد والبدء من جديد", use_container_width=True):
@@ -153,7 +153,7 @@ with st.sidebar:
         st.session_state.contract_name = None
         st.session_state.messages = []
         st.session_state.active_file_id = None
-        st.session_state.doc_stats = {}
+        st.session_state.doc_pages_count = 1
         st.rerun()
 
 
@@ -166,7 +166,7 @@ st.markdown(
     """
     <div class="app-header">
         <h2>⚖️ المساعد القانوني الذكي</h2>
-        <p>ارفع أي عقد واسأل عن أي بند أو شرط أو التزام، وسيجيبك الذكاء الاصطناعي بدقة فورية وسرعة فائقة.</p>
+        <p>ارفع أي عقد واسأل عن أي بند أو شرط أو التزام، وسيقوم المساعد القانوني الذكي بتحليله والإجابة بدقة واختصار.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -205,7 +205,7 @@ if uploaded_file is not None:
                     generator=generator,
                 )
                 st.session_state.contract_name = uploaded_file.name
-                st.session_state.doc_stats = {"pages": len(pages), "chunks": len(chunks)}
+                st.session_state.doc_pages_count = len(pages)
                 st.session_state.messages = []
                 st.rerun()
             except Exception as e:
@@ -254,18 +254,18 @@ if st.session_state.pipeline:
     # Chat Input Box
     user_query = st.chat_input("اكتب سؤالك عن العقد هنا (مثلاً: ما هي قيمة الإيجار؟ أو ما هي مدة العقد وشروط فسخه؟)...")
 
-    if user_query:
-        # Add user query to state & UI
-        st.session_state.messages.append({"role": "user", "content": user_query})
-        with st.chat_message("user", avatar="🧑‍💼"):
-            st.markdown(user_query)
+    if user_query and user_query.strip():
+        # Append user query and trigger rerun so it renders immediately
+        st.session_state.messages.append({"role": "user", "content": user_query.strip()})
+        st.rerun()
 
-        # Assistant Generation with smooth streaming
+    # Handle unanswered user message sequentially (Guarantees no skipped questions)
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+        pending_query = st.session_state.messages[-1]["content"]
         with st.chat_message("assistant", avatar="⚖️"):
             try:
-                # Instant retrieval (< 0.05s) + streaming generation
                 stream_iter, retrieved_docs = st.session_state.pipeline.generate_answer_stream(
-                    query=user_query,
+                    query=pending_query,
                     top_k=4,
                 )
 
@@ -286,12 +286,13 @@ if st.session_state.pipeline:
                                 unsafe_allow_html=True,
                             )
 
-                # Save to state
+                # Save assistant response to state
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": full_answer,
                     "docs": retrieved_docs,
                 })
+                st.rerun()
 
             except Exception as e:
                 err_msg = f"❌ تعذر توليد الإجابة: {e}"
@@ -301,3 +302,4 @@ if st.session_state.pipeline:
                     "content": err_msg,
                     "docs": [],
                 })
+                st.rerun()
