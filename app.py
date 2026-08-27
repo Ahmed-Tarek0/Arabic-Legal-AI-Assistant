@@ -230,7 +230,7 @@ if st.session_state.pipeline:
     st.session_state.pipeline.generator = LegalGenerator()
     st.session_state.pipeline.augmentor = LegalAugmentor()
 
-    # Display Chat History
+    # Clean display of message history
     for msg in st.session_state.messages:
         avatar = "🧑‍💼" if msg["role"] == "user" else "⚖️"
         with st.chat_message(msg["role"], avatar=avatar):
@@ -251,22 +251,36 @@ if st.session_state.pipeline:
                             unsafe_allow_html=True,
                         )
 
-    # Chat Input Box
-    user_query = st.chat_input("اكتب سؤالك عن العقد هنا (مثلاً: ما هي قيمة الإيجار؟ أو ما هي مدة العقد وشروط فسخه؟)...")
+    # Check if a response is currently generating
+    is_generating = (
+        bool(st.session_state.messages)
+        and st.session_state.messages[-1]["role"] == "user"
+    )
+
+    input_placeholder = (
+        "⏳ جاري كتابة الإجابة، يرجى الانتظار ثوانٍ..."
+        if is_generating
+        else "اكتب سؤالك عن العقد هنا (مثلاً: ما هي قيمة الإيجار؟ أو ما هي مدة العقد وشروط فسخه؟)..."
+    )
+
+    # Chat Input Box - Disabled while the assistant is writing
+    user_query = st.chat_input(input_placeholder, disabled=is_generating)
 
     if user_query and user_query.strip():
-        # Append user query and trigger rerun so it renders immediately
+        # Remove any dangling unanswered query before appending the new one
+        if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+            st.session_state.messages.pop()
         st.session_state.messages.append({"role": "user", "content": user_query.strip()})
         st.rerun()
 
-    # Handle unanswered user message sequentially (Guarantees no skipped questions)
-    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+    # Generate assistant answer if there is a pending user question
+    if is_generating:
         pending_query = st.session_state.messages[-1]["content"]
         with st.chat_message("assistant", avatar="⚖️"):
             try:
                 stream_iter, retrieved_docs = st.session_state.pipeline.generate_answer_stream(
                     query=pending_query,
-                    top_k=4,
+                    top_k=3,
                 )
 
                 full_answer = st.write_stream(stream_iter)
@@ -286,7 +300,7 @@ if st.session_state.pipeline:
                                 unsafe_allow_html=True,
                             )
 
-                # Save assistant response to state
+                # Save assistant response
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": full_answer,

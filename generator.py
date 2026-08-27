@@ -1,6 +1,6 @@
 """
 Legal Answer Generator using Gemini AI.
-Provides direct, accurate, natural Arabic legal answers for uploaded contracts.
+Provides direct, accurate, natural Arabic legal answers for uploaded contracts with ultra-fast latency.
 """
 
 from __future__ import annotations
@@ -41,7 +41,8 @@ class LegalGenerator:
         system_instruction = "\n".join([m["content"] for m in messages if m["role"] == "system"])
         user_content = "\n\n".join([m["content"] for m in messages if m["role"] == "user"])
 
-        candidate_models = [self.model_name, "gemini-3.7-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        # Try fast modern flash models in order
+        candidate_models = [self.model_name, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-flash-latest"]
         for model in candidate_models:
             try:
                 response = self._gemini_client.models.generate_content(
@@ -51,14 +52,13 @@ class LegalGenerator:
                 )
                 if response and response.text:
                     return response.text.strip()
-            except Exception as e:
-                print(f"[warn] Failed with {model}: {e}")
+            except Exception:
                 continue
 
         return "❌ تعذر توليد الإجابة. يرجى المحاولة مرة أخرى."
 
     def generate_stream(self, messages: List[Dict[str, str]]) -> Iterator[str]:
-        """Generate streaming response."""
+        """Generate streaming response with lowest time-to-first-token."""
         if not self._gemini_client:
             yield "⚠️ تعذر الاتصال بمحرك الذكاء الاصطناعي (Gemini)."
             return
@@ -66,7 +66,7 @@ class LegalGenerator:
         system_instruction = "\n".join([m["content"] for m in messages if m["role"] == "system"])
         user_content = "\n\n".join([m["content"] for m in messages if m["role"] == "user"])
 
-        candidate_models = [self.model_name, "gemini-3.7-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        candidate_models = [self.model_name, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-flash-latest"]
         for model in candidate_models:
             try:
                 response = self._gemini_client.models.generate_content_stream(
@@ -81,9 +81,8 @@ class LegalGenerator:
                         yield chunk.text
                 if emitted:
                     return
-            except Exception as e:
-                print(f"[warn] Stream failed with {model}: {e}")
+            except Exception:
                 continue
 
-        # If all stream attempts fail, try normal generate
+        # If stream fails, fallback to generate
         yield self.generate(messages)
