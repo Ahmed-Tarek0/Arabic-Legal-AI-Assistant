@@ -1,56 +1,34 @@
-import torch
+import os
 from typing import List, Dict
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from groq import Groq
 
 
 class LegalGenerator:
-    """Handles the Generation phase using Qwen 2.5 with 4-bit Quantization."""
+    """Handles the Generation phase using Groq API."""
 
     def __init__(
         self,
-        model_name: str = "Qwen/Qwen2.5-7B-Instruct"
+        model_name: str = "allam-2-7b"
     ):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.model_name = model_name
 
-        quantization_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_quant_type="nf4"
-        )
+        api_key = os.getenv("GROQ_API_KEY")
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            quantization_config=quantization_config,
-            device_map="auto"
-        )
-
-    def generate(self, messages: List[Dict[str, str]]) -> str:
-        prompt_text = self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
-
-        model_inputs = self.tokenizer(
-            [prompt_text],
-            return_tensors="pt"
-        ).to(self.model.device)
-
-        with torch.inference_mode():
-            generated_ids = self.model.generate(
-                **model_inputs,
-                max_new_tokens=512,
-                temperature=0.1,
-                do_sample=False
+        if not api_key:
+            raise ValueError(
+                "GROQ_API_KEY is not set. "
+                "Please add your Groq API key."
             )
 
-        generated_ids = [
-            output_ids[len(input_ids):]
-            for input_ids, output_ids
-            in zip(model_inputs.input_ids, generated_ids)
-        ]
+        self.client = Groq(api_key=api_key)
 
-        return self.tokenizer.batch_decode(
-            generated_ids,
-            skip_special_tokens=True
-        )[0]
+    def generate(self, messages: List[Dict[str, str]]) -> str:
+
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+            temperature=0.1,
+            max_tokens=512
+        )
+
+        return response.choices[0].message.content

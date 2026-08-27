@@ -13,4 +13,6 @@ faiss-cpu>=1.8.0
 transformers>=4.45.0
 torch
 accelerate
-bitsandbytes>=0.43.0
+bitsandbytes>=0.43.0 
+streamlit
+groq
