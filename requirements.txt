@@ -3,16 +3,13 @@ PyMuPDF>=1.24.0
 numpy>=1.26.0
 pydantic>=2.7.0
 tqdm>=4.66.0
-datasets>=2.19.0
 
 # Retrieval & Embeddings
 FlagEmbedding>=1.2.10
 faiss-cpu>=1.8.0
 
-# LLM Generation (Qwen)
-transformers>=4.45.0
-torch
-accelerate
-bitsandbytes>=0.43.0 
-streamlit
-groq
+# LLM Generation
+groq>=1.0.0
+
+# Web App
+streamlit>=1.40.0
