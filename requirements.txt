@@ -1,15 +1,21 @@
 # Data Processing & Extraction
 PyMuPDF>=1.24.0
+python-docx>=1.1.0
 numpy>=1.26.0
 pydantic>=2.7.0
 tqdm>=4.66.0
+datasets>=2.19.0
 
 # Retrieval & Embeddings
 FlagEmbedding>=1.2.10
 faiss-cpu>=1.8.0
 
-# LLM Generation
-groq>=1.0.0
+# LLM Generation (Qwen / APIs)
+transformers>=4.45.0
+torch
+accelerate
+google-genai>=2.0.0
+openai>=1.30.0
 
-# Web App
-streamlit>=1.40.0
+# Web Application
+streamlit>=1.35.0

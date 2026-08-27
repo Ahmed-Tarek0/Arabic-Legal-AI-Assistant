@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environments & IDEs
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+
+# Temporary data / caches
+.streamlit/
+*.log

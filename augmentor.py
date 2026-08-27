@@ -1,86 +1,56 @@
-from typing import List, Dict, Any
+"""
+Augmentation module for Arabic Legal Assistant.
+Builds concise, direct prompts focused on answering the user's question accurately.
+"""
 
+from typing import Any, Dict, List
 
-SYSTEM_PROMPT = """أنت مساعد قانوني متخصص في القوانين واللوائح والعقود باللغة العربية.
+SYSTEM_PROMPT = """أنت مستشار قانوني ذكي متخصص في قراءة وتحليل العقود باللغة العربية.
 
-مهمتك هي الإجابة على سؤال المستخدم اعتمادًا حصريًا على النصوص القانونية
-المسترجعة والمقدمة لك في السياق.
+مهمتك:
+الإجابة على سؤال المستخدم بشكل مباشر وواضح ومحدد، بالاعتماد التام على نصوص وبنود العقد المرفقة في السياق.
 
-القواعد:
-1. استخدم المعلومات الموجودة في النصوص المسترجعة فقط.
-2. لا تضف معلومات من معرفتك الخارجية.
-3. لا تخترع مواد قانونية أو أرقام مواد أو أحكام.
-4. إذا لم تكن الإجابة موجودة أو كانت المعلومات غير كافية، قل بوضوح:
-"المعلومة غير متوفرة في المستندات المتاحة".
-5. أجب باللغة العربية بأسلوب قانوني رسمي.
-6. اذكر مصدر المعلومة أو رقم المادة إذا كان موجودًا في السياق.
+تعليمات الإجابة:
+1. أجب عن السؤال مباشرة دون مقدمات طويلة (مثلاً: إذا سأل عن القيمة المالية أو الأجرة، اذكر القيمة وطريقة السداد ومواعيدها بدقة).
+2. استخدم لغة عربية سليمة وواضحة ومنظمة في نقاط إذا كانت الإجابة تتضمن شروطاً متعددة.
+3. اذكر رقم البند أو المادة ورقم الصفحة التي وردت فيها المعلومة.
+4. إذا كان السؤال عن شيء لم يرد ذكره مطلقاً في بنود العقد المتاحة، قل بوضوح: "لم يرد في نصوص العقد المرفوع أي بند ينص على ذلك".
 """
 
 
 class LegalAugmentor:
     """Handles the Augmentation phase of the RAG pipeline."""
 
-    def build_context(
-        self,
-        retrieved_docs: List[Dict[str, Any]]
-    ) -> str:
-
+    def build_context(self, retrieved_docs: List[Dict[str, Any]]) -> str:
         context_blocks = []
 
         for idx, doc in enumerate(retrieved_docs, start=1):
-
             text = doc.get("text", doc.get("page_content", ""))
-
-            source = doc.get(
-                "source",
-                doc.get("doc_id", f"المستند رقم {idx}")
-            )
-
-            article = doc.get("article", "")
-            pages = doc.get("source_pages", "")
-
-            metadata = [f"المصدر: {source}"]
-
-            if article:
-                metadata.append(f"المادة: {article}")
-
-            if pages:
-                metadata.append(f"الصفحات: {pages}")
-
-            header = " | ".join(metadata)
-
+            pages = doc.get("source_pages", [])
+            page_str = f"الصفحة: {pages}" if pages else ""
+            
             context_blocks.append(
-                f"[المصدر {idx}]\n"
-                f"{header}\n\n"
-                f"{text}"
+                f"--- [مقطع من العقد {idx}] ({page_str}) ---\n{text}"
             )
 
-        return "\n\n---\n\n".join(context_blocks)
+        return "\n\n".join(context_blocks)
 
     def augment(
         self,
         query: str,
-        retrieved_docs: List[Dict[str, Any]]
+        retrieved_docs: List[Dict[str, Any]],
     ) -> List[Dict[str, str]]:
-
         context = self.build_context(retrieved_docs)
 
-        user_prompt = f"""النصوص القانونية المسترجعة:
-
+        user_prompt = f"""نصوص وبنود العقد ذات الصلة:
 {context}
 
 سؤال المستخدم:
 {query}
 
-أجب على السؤال اعتمادًا على النصوص السابقة فقط."""
+أجب عن سؤال المستخدم إجابة مباشرة ودقيقة استناداً إلى نصوص العقد أعلاه:"""
 
         return [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
         ]

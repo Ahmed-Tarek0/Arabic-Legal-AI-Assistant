@@ -33,16 +33,32 @@ class LegalRetriever:
 
     def __init__(
         self,
-        index_path: Path = FAISS_INDEX_PATH,
-        metadata_path: Path = METADATA_PATH,
+        index_path: Path | str | None = FAISS_INDEX_PATH,
+        metadata_path: Path | str | None = METADATA_PATH,
+        index: faiss.Index | None = None,
+        metadata: list[dict] | None = None,
     ):
-        self.index_path = Path(index_path)
-        self.metadata_path = Path(metadata_path)
-
-        self.index = self._load_index()
-        self.metadata = self._load_metadata()
+        if index is not None and metadata is not None:
+            self.index = index
+            self.metadata = metadata
+            self.index_path = Path(index_path) if index_path else None
+            self.metadata_path = Path(metadata_path) if metadata_path else None
+        else:
+            self.index_path = Path(index_path)
+            self.metadata_path = Path(metadata_path)
+            self.index = self._load_index()
+            self.metadata = self._load_metadata()
 
         self._validate_index_and_metadata()
+
+    @classmethod
+    def from_index_and_metadata(
+        cls,
+        index: faiss.Index,
+        metadata: list[dict],
+    ) -> LegalRetriever:
+        """Construct a LegalRetriever instance directly from an in-memory index and metadata."""
+        return cls(index_path=None, metadata_path=None, index=index, metadata=metadata)
 
     def _load_index(self) -> faiss.Index:
         """Load the FAISS index from disk."""

@@ -1,44 +1,71 @@
-# Arabic-Legal-AI-Assistant
+# ⚖️ المساعد القانوني الذكي لتحليل العقود (Arabic Legal AI Assistant)
 
-## Features
-
-* Arabic legal document understanding
-* Semantic document retrieval
-* Context augmentation
-* LLM-based answer generation
-* Source/context-aware responses
-
-## System Architecture
-
-1. PDFs/Documents
-2. Text Extraction
-3. Chunking
-4. Embeddings
-5. Vector Database
-6. User Question
-7. Query Embedding
-8. Retrieval
-9. Context Augmentation
-10. LLM Generation
-11. Arabic Legal Answer
+نظام متكامل للذكاء الاصطناعي التوليدي والبحث الدلالي المتقدم (RAG) مخصص لتحليل واستجواب العقود والوثائق القانونية باللغة العربية.
+يتيح للمستخدم رفع أي عقد بصيغة (**PDF / Word .docx / Text .txt**)، وبناء فهرس متجهات فوري بالذاكرة، وطرح أي استفسار قانوني والحصول على إجابات دقيقة وموثقة بالبنود وأرقام الصفحات.
 
 ---
 
-## Project Structure
+## ✨ المميزات الرئيسية (Key Features)
 
-* `config.py`: System configuration and path settings.
-* `pdf_extractor.py`: Extracts text from legal PDF documents.
-* `text_chunker.py`: Splits extracted text into smaller chunks.
-* `embedder.py`: Handles vector embedding generation.
-* `build_embeddings.py`: Processes documents into embeddings.
-* `build_index.py`: Builds and saves the FAISS vector index.
-* `retriever.py`: Retrieves relevant context based on user queries.
-* `generator.py`: Connects retrieved context with LLM for final answer generation (Augmentation & Generation).
+* **رفع ديناميكي للعقود (Dynamic Ingestion)**: يدعم استخراج ومعالجة ملفات PDF، DOCX، و TXT فورياً.
+* **فهرسة دلالية فورية (Real-time In-Memory RAG)**: استخدام نموذج `BAAI/bge-m3` ومكتبة `FAISS` لتقطيع وفهرسة بنود العقد بدقة عالية.
+* **واجهة مستخدم تفاعلية (Streamlit UI)**: واجهة عربية بتصميم حديث (RTL) مع شات تفاعلي وأسئلة مقترحة سريعة.
+* **توثيق الأدلة والبراهين (Evidence & Citations)**: عرض أرقام البنود، أرقام الصفحات، ونسب التطابق لكل إجابة.
+* **تدقيق شامل وفحص المخاطر (Full Contract Risk Audit)**: استخراج أطراف العقد، الالتزامات المالية، الشروط الجزائية، ومحددات المسؤولية بضغطة زر واحدة.
+* **عقود نموذجية جاهزة (Sample Contracts)**: إمكانية تجربة النظام مباشرة بنماذج جاهزة (عقد عمل، عقد إيجار، اتفاقية سرية معلومات NDA).
+* **دعم محركات ذكاء اصطناعي متعددة (Multi-backend LLMs)**: دعم Google Gemini API، و OpenAI / Groq، والنماذج المحلية Local Qwen 2.5، مع نظام استخلاص ذكي احتياطي (Fallback).
 
 ---
 
-## Quick Start
+## 🚀 كيفية تشغيل التطبيق (How to Run)
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+### 1. تثبيت المتطلبات (Installation)
+تأكد من تفعيل بيئة العمل ثم تثبيت الحزم:
+```bash
+pip install -r requirements.txt
+```
+
+### 2. تشغيل واجهة الويب (Streamlit App)
+قم بتشغيل الأمر التالي:
+```bash
+streamlit run app.py
+```
+أو عبر مسار بايثون الخاص ببيئتك:
+```bash
+python -m streamlit run app.py
+```
+سيفتح التطبيق تلقائياً في المتصفح على العنوان: `http://localhost:8501`.
+
+---
+
+## 💻 التشغيل عبر سطر الأوامر (CLI Mode)
+
+يمكنك أيضاً اختبار النظام مباشرة من الطرفية (Terminal):
+
+```bash
+# تشغيل واستجواب عقد محدد
+python main.py --file path/to/your_contract.pdf
+
+# أو استخدام الفهرس المخزن سابقاً
+python main.py
+```
+
+---
+
+## 🏗️ بنية المشروع (Project Structure)
+
+```text
+├── app.py                   # واجهة المستخدم التفاعلية (Streamlit App)
+├── document_processor.py    # معالجة المستندات الديناميكية (استخراج، تقطيع، تضمين، فهرسة)
+├── retriever.py             # محرك الاسترجاع الدلالي (FAISS + BGE-M3)
+├── generator.py             # محرك توليد الإجابات القانونية (Gemini / OpenAI / Qwen / Fallback)
+├── augmentor.py             # صياغة الموجهات القانونية وهيكلة السياق
+├── rag_pipeline.py          # خط أنابيب الـ RAG الموحد
+├── sample_contracts.py      # عقود ونماذج عربية جاهزة للاختبار الفوري
+├── pdf_extractor.py         # استخراج النصوص من ملفات PDF (PyMuPDF)
+├── text_chunker.py          # تقطيع النصوص مع مراعاة بنود المواد والقوانين
+├── embedder.py              # توليد متجهات التضمين عبر BGE-M3
+├── config.py                # إعدادات النظام والأبعاد ونماذج التضمين
+├── requirements.txt         # متطلبات وحزم المشروع
+└── README.md                # دليل الاستخدام والتوثيق
+```
