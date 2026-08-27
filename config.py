@@ -29,7 +29,6 @@ CHUNK_OVERLAP_WORDS = 40      # sliding-window overlap between consecutive chunk
 MIN_CHUNK_WORDS = 20          # drop chunks smaller than this (headers, page numbers, noise)
 
 # ---------- Embedding (Fast & Lightweight Multilingual Model) ----------
-# paraphrase-multilingual-MiniLM-L12-v2: Ultra-fast (<0.05s query time), ~120MB RAM, excellent Arabic semantic understanding
 EMBED_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 EMBED_BATCH_SIZE = 32
 EMBED_MAX_LENGTH = 512
@@ -37,7 +36,7 @@ USE_FP16 = False
 
 # ---------- FAISS ----------
 EMBED_DIM = 384               # MiniLM dense vector dimension
-TOP_K = 4
+TOP_K = 3
 
 # ---------- Evaluation (Phase 2) ----------
 HF_DATASET_ID = "dataflare/egypt-legal-corpus"
@@ -67,4 +66,4 @@ if env_file.exists():
                 os.environ.setdefault(k.strip(), v.strip())
 
 DEFAULT_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"

@@ -41,8 +41,8 @@ class LegalGenerator:
         system_instruction = "\n".join([m["content"] for m in messages if m["role"] == "system"])
         user_content = "\n\n".join([m["content"] for m in messages if m["role"] == "user"])
 
-        # Try fast modern flash models in order
-        candidate_models = [self.model_name, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-flash-latest"]
+        # High-quota, ultra-low latency models
+        candidate_models = [self.model_name, "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash"]
         for model in candidate_models:
             try:
                 response = self._gemini_client.models.generate_content(
@@ -66,7 +66,7 @@ class LegalGenerator:
         system_instruction = "\n".join([m["content"] for m in messages if m["role"] == "system"])
         user_content = "\n\n".join([m["content"] for m in messages if m["role"] == "user"])
 
-        candidate_models = [self.model_name, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-flash-latest"]
+        candidate_models = [self.model_name, "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash"]
         for model in candidate_models:
             try:
                 response = self._gemini_client.models.generate_content_stream(
