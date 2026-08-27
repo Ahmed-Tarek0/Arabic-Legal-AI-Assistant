@@ -10,7 +10,6 @@ from augmentor import LegalAugmentor
 from document_processor import process_contract_dynamically
 from generator import LegalGenerator
 from rag_pipeline import LegalRAGPipeline
-from sample_contracts import SAMPLE_CONTRACTS
 
 # ==============================================================================
 # Page Configuration
@@ -101,58 +100,35 @@ with st.sidebar:
     st.markdown("### ⚖️ إدارة العقد")
     st.markdown("---")
 
-    st.markdown("#### 📂 1. ارفع ملف العقد")
+    st.markdown("#### 📂 ارفع ملف العقد")
     uploaded_file = st.file_uploader(
         "اختر ملف العقد (PDF / Word / TXT):",
         type=["pdf", "docx", "txt", "text"],
         help="ارفع أي عقد أو اتفاقية للاستفسار عنها",
     )
 
-    st.markdown("#### أو اختر نموذج عقد جاهز للتجربة:")
-    sample_choice = st.selectbox(
-        "عقود نموذجية:",
-        ["-- اختر نموذجاً للتجربة --"] + list(SAMPLE_CONTRACTS.keys()),
-        index=0,
-    )
-
-    load_sample = False
-    if sample_choice != "-- اختر نموذجاً للتجربة --":
-        load_sample = st.button("📥 تحميل هذا العقد", use_container_width=True)
-
     # Ingestion Logic
-    file_to_process = None
-    filename_to_process = ""
-
     if uploaded_file is not None:
         file_id = f"{uploaded_file.name}_{uploaded_file.size}"
         if st.session_state.active_file_id != file_id:
-            file_to_process = uploaded_file
-            filename_to_process = uploaded_file.name
             st.session_state.active_file_id = file_id
-
-    elif load_sample and sample_choice in SAMPLE_CONTRACTS:
-        file_to_process = SAMPLE_CONTRACTS[sample_choice].encode("utf-8")
-        filename_to_process = f"{sample_choice}.txt"
-        st.session_state.active_file_id = filename_to_process
-
-    if file_to_process is not None:
-        with st.spinner("⏳ جاري قراءة نصوص العقد وبناء الفهرس الدلالي..."):
-            try:
-                retriever, chunks, pages = process_contract_dynamically(
-                    file_source=file_to_process,
-                    filename=filename_to_process,
-                )
-                generator = LegalGenerator()
-                st.session_state.pipeline = LegalRAGPipeline(
-                    retriever=retriever,
-                    augmentor=LegalAugmentor(),
-                    generator=generator,
-                )
-                st.session_state.contract_name = filename_to_process
-                st.session_state.messages = []
-                st.success(f"✅ تم تحميل العقد: {filename_to_process}")
-            except Exception as e:
-                st.error(f"❌ حدث خطأ أثناء معالجة الملف: {e}")
+            with st.spinner("⏳ جاري قراءة نصوص العقد وبناء الفهرس الدلالي..."):
+                try:
+                    retriever, chunks, pages = process_contract_dynamically(
+                        file_source=uploaded_file,
+                        filename=uploaded_file.name,
+                    )
+                    generator = LegalGenerator()
+                    st.session_state.pipeline = LegalRAGPipeline(
+                        retriever=retriever,
+                        augmentor=LegalAugmentor(),
+                        generator=generator,
+                    )
+                    st.session_state.contract_name = uploaded_file.name
+                    st.session_state.messages = []
+                    st.success(f"✅ تم تحميل العقد: {uploaded_file.name}")
+                except Exception as e:
+                    st.error(f"❌ حدث خطأ أثناء معالجة الملف: {e}")
 
     # Ensure generator & augmentor are always refreshed
     if st.session_state.pipeline:
@@ -188,8 +164,8 @@ if not st.session_state.pipeline:
         """
         <div style="text-align: center; padding: 3rem 1.5rem; border: 2px dashed #94a3b8; border-radius: 12px; margin-top: 1rem;">
             <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">📄</div>
-            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 700;">ابدأ برفع ملف العقد من القائمة الجانبية</h3>
-            <p style="color: #64748b;">(يدعم ملفات PDF و Word و TXT أو النماذج الجاهزة للتجربة)</p>
+            <h3 style="color: #0f172a; margin-bottom: 0.5rem; font-weight: 700;">ابدأ بررفع ملف العقد من القائمة الجانبية</h3>
+            <p style="color: #64748b;">(يدعم ملفات PDF و Word و TXT)</p>
         </div>
         """,
         unsafe_allow_html=True,
