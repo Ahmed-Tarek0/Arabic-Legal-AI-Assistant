@@ -1,6 +1,6 @@
 """
 Arabic Legal AI Assistant - Fast, Clean & Interactive Contract Analysis.
-Supports Drag & Drop file upload, instant indexing, interactive quick questions, and direct legal answers.
+Supports Drag & Drop file upload, instant indexing, and direct legal answers.
 """
 
 from __future__ import annotations
@@ -86,13 +86,6 @@ st.markdown(
         color: #166534;
         font-weight: 600;
         font-size: 0.95rem;
-    }
-
-    /* Quick Question Buttons */
-    .stButton button {
-        border-radius: 20px !important;
-        font-weight: 600 !important;
-        transition: all 0.2s ease;
     }
 
     /* Chat bubble typography */
@@ -234,24 +227,6 @@ if st.session_state.pipeline:
     st.session_state.pipeline.generator = LegalGenerator()
     st.session_state.pipeline.augmentor = LegalAugmentor()
 
-    # Quick Suggestion Chips for user convenience
-    if not st.session_state.messages:
-        st.markdown("<p style='color:#64748b; font-size:0.9rem;'>💡 <b>أسئلة مقترحة سريعة:</b></p>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if st.button("👥 من هم أطراف العقد؟", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "من هم أطراف هذا العقد وبياناتهم؟"})
-                st.rerun()
-        with col2:
-            if st.button("💰 القيمة المالية / الأجرة؟", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "ما هي القيمة المالية أو الأجرة المتفق عليها وطريقة سدادها؟"})
-                st.rerun()
-        with col3:
-            if st.button("⚠️ شروط الفسخ والإنهاء؟", use_container_width=True):
-                st.session_state.messages.append({"role": "user", "content": "ما هي مدة العقد وشروط فسخه أو إنهائه؟"})
-                st.rerun()
-        st.markdown("<br>", unsafe_allow_html=True)
-
     # Clean display of message history
     for msg in st.session_state.messages:
         avatar = "🧑‍💼" if msg["role"] == "user" else "⚖️"
@@ -267,7 +242,7 @@ if st.session_state.pipeline:
     input_placeholder = (
         "⏳ جاري كتابة الإجابة، يرجى الانتظار ثوانٍ..."
         if is_generating
-        else "اكتب سؤالك عن العقد هنا (مثلاً: ما هي قيمة الإيجار؟ أو ما هي مدة العقد وشروط فسخه؟)..."
+        else "اكتب سؤالك عن العقد هنا..."
     )
 
     # Chat Input Box - Disabled while the assistant is writing
