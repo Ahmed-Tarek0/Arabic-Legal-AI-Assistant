@@ -1,71 +1,115 @@
-# ⚖️ المساعد القانوني الذكي لتحليل العقود (Arabic Legal AI Assistant)
+# ⚖️ Arabic Legal AI Assistant
 
-نظام متكامل للذكاء الاصطناعي التوليدي والبحث الدلالي المتقدم (RAG) مخصص لتحليل واستجواب العقود والوثائق القانونية باللغة العربية.
-يتيح للمستخدم رفع أي عقد بصيغة (**PDF / Word .docx / Text .txt**)، وبناء فهرس متجهات فوري بالذاكرة، وطرح أي استفسار قانوني والحصول على إجابات دقيقة وموثقة بالبنود وأرقام الصفحات.
+An intelligent generative AI and advanced semantic search (**RAG**) system designed specifically for analyzing and querying Arabic contracts and legal documents.
 
----
-
-## ✨ المميزات الرئيسية (Key Features)
-
-* **رفع ديناميكي للعقود (Dynamic Ingestion)**: يدعم استخراج ومعالجة ملفات PDF، DOCX، و TXT فورياً.
-* **فهرسة دلالية فورية (Real-time In-Memory RAG)**: استخدام نموذج `BAAI/bge-m3` ومكتبة `FAISS` لتقطيع وفهرسة بنود العقد بدقة عالية.
-* **واجهة مستخدم تفاعلية (Streamlit UI)**: واجهة عربية بتصميم حديث (RTL) مع شات تفاعلي وأسئلة مقترحة سريعة.
-* **توثيق الأدلة والبراهين (Evidence & Citations)**: عرض أرقام البنود، أرقام الصفحات، ونسب التطابق لكل إجابة.
-* **تدقيق شامل وفحص المخاطر (Full Contract Risk Audit)**: استخراج أطراف العقد، الالتزامات المالية، الشروط الجزائية، ومحددات المسؤولية بضغطة زر واحدة.
-* **عقود نموذجية جاهزة (Sample Contracts)**: إمكانية تجربة النظام مباشرة بنماذج جاهزة (عقد عمل، عقد إيجار، اتفاقية سرية معلومات NDA).
-* **دعم محركات ذكاء اصطناعي متعددة (Multi-backend LLMs)**: دعم Google Gemini API، و OpenAI / Groq، والنماذج المحلية Local Qwen 2.5، مع نظام استخلاص ذكي احتياطي (Fallback).
+The system allows users to upload contracts in **PDF, DOCX, or TXT** format, instantly build an in-memory vector index, and ask legal questions while receiving accurate, evidence-based answers supported by relevant contract clauses and page numbers.
 
 ---
 
-## 🚀 كيفية تشغيل التطبيق (How to Run)
+## ✨ Key Features
 
-### 1. تثبيت المتطلبات (Installation)
-تأكد من تفعيل بيئة العمل ثم تثبيت الحزم:
+* **Dynamic Contract Ingestion**: Supports real-time extraction and processing of PDF, DOCX, and TXT files.
+* **Real-time In-Memory RAG**: Uses `BAAI/bge-m3` embeddings and `FAISS` for accurate semantic chunking and indexing of contract clauses.
+* **Interactive Streamlit UI**: Modern Arabic RTL interface with an interactive chat, suggested questions, and an intuitive user experience.
+* **Evidence & Citations**: Displays relevant clause numbers, page numbers, and similarity scores supporting each answer.
+* **Full Contract Risk Audit**: Automatically extracts contract parties, financial obligations, penalty clauses, and liability limitations with a single click.
+* **Ready-to-Use Sample Contracts**: Includes sample Arabic contracts such as employment contracts, rental agreements, and Non-Disclosure Agreements (NDAs).
+* **Multi-Backend LLM Support**: Supports Google Gemini API, OpenAI/Groq, and local Qwen 2.5 models, with an intelligent fallback mechanism for answer generation.
+
+---
+
+## 🚀 How to Run
+
+### 1. Install Requirements
+
+Activate your virtual environment and install the required dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. تشغيل واجهة الويب (Streamlit App)
-قم بتشغيل الأمر التالي:
+### 2. Run the Streamlit Application
+
+Start the web interface using:
+
 ```bash
 streamlit run app.py
 ```
-أو عبر مسار بايثون الخاص ببيئتك:
+
+Or through your Python environment:
+
 ```bash
 python -m streamlit run app.py
 ```
-سيفتح التطبيق تلقائياً في المتصفح على العنوان: `http://localhost:8501`.
+
+The application will be available at:
+
+```text
+http://localhost:8501
+```
 
 ---
 
-## 💻 التشغيل عبر سطر الأوامر (CLI Mode)
+## 💻 CLI Mode
 
-يمكنك أيضاً اختبار النظام مباشرة من الطرفية (Terminal):
+The system can also be tested directly from the terminal.
+
+### Query a Specific Contract
 
 ```bash
-# تشغيل واستجواب عقد محدد
 python main.py --file path/to/your_contract.pdf
+```
 
-# أو استخدام الفهرس المخزن سابقاً
+### Use the Previously Stored Index
+
+```bash
 python main.py
 ```
 
 ---
 
-## 🏗️ بنية المشروع (Project Structure)
+## 🏗️ Project Structure
 
 ```text
-├── app.py                   # واجهة المستخدم التفاعلية (Streamlit App)
-├── document_processor.py    # معالجة المستندات الديناميكية (استخراج، تقطيع، تضمين، فهرسة)
-├── retriever.py             # محرك الاسترجاع الدلالي (FAISS + BGE-M3)
-├── generator.py             # محرك توليد الإجابات القانونية (Gemini / OpenAI / Qwen / Fallback)
-├── augmentor.py             # صياغة الموجهات القانونية وهيكلة السياق
-├── rag_pipeline.py          # خط أنابيب الـ RAG الموحد
-├── sample_contracts.py      # عقود ونماذج عربية جاهزة للاختبار الفوري
-├── pdf_extractor.py         # استخراج النصوص من ملفات PDF (PyMuPDF)
-├── text_chunker.py          # تقطيع النصوص مع مراعاة بنود المواد والقوانين
-├── embedder.py              # توليد متجهات التضمين عبر BGE-M3
-├── config.py                # إعدادات النظام والأبعاد ونماذج التضمين
-├── requirements.txt         # متطلبات وحزم المشروع
-└── README.md                # دليل الاستخدام والتوثيق
+├── app.py                   # Interactive Streamlit user interface
+├── document_processor.py    # Dynamic document processing, chunking, embedding, and indexing
+├── retriever.py             # Semantic retrieval engine using FAISS + BGE-M3
+├── generator.py             # LLM answer generation (Gemini / OpenAI / Groq / Qwen / Fallback)
+├── augmentor.py             # Legal prompt construction and context structuring
+├── rag_pipeline.py          # Unified RAG pipeline
+├── sample_contracts.py      # Ready-to-use Arabic sample contracts
+├── pdf_extractor.py         # PDF text extraction using PyMuPDF
+├── text_chunker.py          # Contract-aware text chunking
+├── embedder.py              # Embedding generation using BGE-M3
+├── config.py                # System configuration and model settings
+├── requirements.txt         # Project dependencies
+└── README.md                # Project documentation
 ```
+
+---
+
+## 🔄 RAG Pipeline
+
+```text
+Contract Upload
+      ↓
+Document Extraction
+      ↓
+Text Cleaning & Chunking
+      ↓
+BGE-M3 Embeddings
+      ↓
+FAISS Vector Index
+      ↓
+User Legal Query
+      ↓
+Semantic Retrieval
+      ↓
+Context Augmentation
+      ↓
+LLM Generation
+      ↓
+Evidence-Based Legal Answer
+```
+
+---
